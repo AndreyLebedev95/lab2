@@ -1,0 +1,9 @@
+.CutImage__main {
+    position: absolute;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.5);
+}
+.CutImage__rectangle {
+    position: absolute;
+    z-index: 1001;
+}
