@@ -10,9 +10,17 @@ var CutImage = function(img, options) {
    this._mainDiv = this._createDivWithClass('CutImage__main');
    this._rectangle = this._createDivWithClass('CutImage__rectangle');
    this._ellipse = this._createDivWithClass('CutImage__ellipse');
+   this._topLeftResize = this._createDivWithClass('CutImage__topLeftResize');
+   this._topRightResize = this._createDivWithClass('CutImage__topRightResize');
+   this._bottomLeftResize = this._createDivWithClass('CutImage__bottomLeftResize');
+   this._bottomRightResize = this._createDivWithClass('CutImage__bottomRightResize');
 
    this._mainDiv.appendChild(this._rectangle);
    this._rectangle.appendChild(this._ellipse);
+   this._rectangle.appendChild(this._topLeftResize);
+   this._rectangle.appendChild(this._topRightResize);
+   this._rectangle.appendChild(this._bottomLeftResize);
+   this._rectangle.appendChild(this._bottomRightResize);
 
 
    this._mainDiv.style.left = imgCoordinates.left;
@@ -55,19 +63,51 @@ CutImage.prototype._getCoordinates = function(elem) {
 CutImage.prototype._subscribeOnMouseEvent = function() {
    var
        self = this,
+       lastMouseX = 0,
        mouseMove = function(event) {
           var
               rectangleLeftOffset =  parseInt(self._rectangle.style.left.substr(0, self._rectangle.style.left.length - 2)),
-              rectangleWidth;
+              rectangleWidth,
+              cursorOffset = self._screenToOffset(self._mainDiv, event);
 
-          rectangleWidth = Math.abs(event.offsetX - rectangleLeftOffset);
+          lastMouseX = event.offsetX;
+          rectangleWidth = Math.abs(cursorOffset.x - rectangleLeftOffset);
           self._rectangle.style.height = ((rectangleWidth * self._height) / self._width) + 'px';
           self._rectangle.style.width = rectangleWidth + 'px';
+       },
+       mouseUp = function(event) {
+          lastMouseX = event.offsetX;
+          self._mainDiv.removeEventListener('mousemove', mouseMove);
+          self._mainDiv.removeEventListener('mouseup', mouseUp);
+       },
+       stop = function() {
+          return false;
        };
 
    this._mainDiv.addEventListener('mousedown', function(event) {
+      lastMouseX = event.offsetX;
+      self._rectangle.style.width = '0px';
+      self._rectangle.style.height = '0px';
       self._rectangle.style.left = event.offsetX + 'px';
       self._rectangle.style.top = event.offsetY + 'px';
       self._mainDiv.addEventListener('mousemove', mouseMove);
+      self._mainDiv.addEventListener('mouseup', mouseUp);
    });
+
+
+
+   this._mainDiv.ondragstart = stop;
+   this._topLeftResize.ondragstart = stop;
+   this._topRightResize.ondragstart = stop;
+   this._bottomLeftResize.ondragstart = stop;
+   this._bottomRightResize.ondragstart = stop;
 };
+
+CutImage.prototype._screenToOffset = function(elem, event) {
+   var elemScreenCoordinates = elem.getBoundingClientRect();
+
+   return {
+      x: event.screenX - elemScreenCoordinates.left,
+      y: event.screenY - elemScreenCoordinates.top
+   };
+}
