@@ -8,7 +8,6 @@ var CutImage = function(img, options) {
        imgCoordinates = this._getCoordinates(img);
 
    this._mainDiv = this._createDivWithClass('CutImage__main');
-   this._overlay = this._createDivWithClass('CutImage__overlay');
    this._rectangle = this._createDivWithClass('CutImage__rectangle');
    this._ellipse = this._createDivWithClass('CutImage__ellipse');
    this._topLeftResize = this._createDivWithClass('CutImage__topLeftResize');
@@ -17,7 +16,6 @@ var CutImage = function(img, options) {
    this._bottomRightResize = this._createDivWithClass('CutImage__bottomRightResize');
 
    this._mainDiv.appendChild(this._rectangle);
-   this._mainDiv.appendChild(this._overlay);
    this._rectangle.appendChild(this._ellipse);
    this._rectangle.appendChild(this._topLeftResize);
    this._rectangle.appendChild(this._topRightResize);
@@ -29,6 +27,11 @@ var CutImage = function(img, options) {
    this._mainDiv.style.top = imgCoordinates.top;
    this._mainDiv.style.width = img.clientWidth;
    this._mainDiv.style.height = img.clientHeight;
+   this._mainDiv.addEventListener('mousemove', this._redrawImage.bind(this));
+
+   this._rectangle.style.backgroundImage = 'url(' + img.src + ')';
+
+   this._preview = options.preview || [];
 
    if (options.size) {
       options.size = options.size.split(':');
@@ -38,6 +41,21 @@ var CutImage = function(img, options) {
       if (!(this._width || this._height)) {
          console.error('CutImage: неверное соотношение размеров');
          return;
+      }
+   }
+
+   if (this._preview.length) {
+      for (var i = 0; i < this._preview.length; i++) {
+         if (this._preview[i].isEllipse) {
+            this._setEllipseStyle(this._preview[i].el);
+         }
+         this._preview[i].img = this._createImgWithClass('CutImage__previewImg');
+         this._preview[i].img.src = img.src;
+         this._preview[i].el.style.position = 'relative';
+         this._preview[i].el.style.overflow = 'hidden';
+         this._preview[i].el.style.width = this._preview[i].width + 'px';
+         this._preview[i].el.style.height = ((this._preview[i].width * this._height) / this._width) + 'px';
+         this._preview[i].el.append(this._preview[i].img);
       }
    }
 
@@ -53,6 +71,13 @@ CutImage.prototype._createDivWithClass = function(className) {
    return result;
 };
 
+CutImage.prototype._createImgWithClass = function(className) {
+   var result = document.createElement('img');
+
+   result.className = className;
+   return result;
+};
+
 CutImage.prototype._getCoordinates = function(elem) {
    var box = elem.getBoundingClientRect();
 
@@ -60,6 +85,10 @@ CutImage.prototype._getCoordinates = function(elem) {
       top: box.top + pageYOffset,
       left: box.left + pageXOffset
    }
+};
+
+CutImage.prototype._setEllipseStyle = function(elem) {
+   elem.style.borderRadius = '100%';
 };
 
 CutImage.prototype._subscribeOnMouseEvent = function() {
@@ -93,6 +122,7 @@ CutImage.prototype._subscribeOnMouseEvent = function() {
           rectangleWidth = Math.abs(cursorOffset.x - rectangleLeftOffset);
           self._rectangle.style.height = ((rectangleWidth * self._height) / self._width).toFixed() + 'px';
           self._rectangle.style.width = rectangleWidth + 'px';
+          self._redrawImage();
        },
        mouseUpBottomRight = function(event) {
           self._mainDiv.removeEventListener('mousemove', mouseMoveBottomRight);
@@ -111,6 +141,7 @@ CutImage.prototype._subscribeOnMouseEvent = function() {
           self._rectangle.style.width = ((rectangleHeight * self._width) / self._height).toFixed() + 'px';
           self._rectangle.style.height = rectangleHeight + 'px';
           self._rectangle.style.left = (rectangleLeftOffset - (self._parseStyle(self._rectangle.style.width) - oldWidth)) + 'px';
+          self._redrawImage();
        },
        mouseUpBottomLeft = function(event) {
           self._mainDiv.removeEventListener('mousemove', mouseMoveBottomLeft);
@@ -129,6 +160,7 @@ CutImage.prototype._subscribeOnMouseEvent = function() {
           self._rectangle.style.height = ((rectangleWidth * self._height) / self._width).toFixed() + 'px';
           self._rectangle.style.width = rectangleWidth + 'px';
           self._rectangle.style.top = (rectangleTopOffset - (self._parseStyle(self._rectangle.style.height) - oldHeight)) + 'px';
+          self._redrawImage();
        },
        mouseUpTopRight = function(event) {
           self._mainDiv.removeEventListener('mousemove', mouseMoveTopRight);
@@ -149,6 +181,7 @@ CutImage.prototype._subscribeOnMouseEvent = function() {
            self._rectangle.style.width = rectangleWidth + 'px';
            self._rectangle.style.top = (rectangleTopOffset - (self._parseStyle(self._rectangle.style.height) - oldHeight)) + 'px';
            self._rectangle.style.left = (rectangleLeftOffset - (self._parseStyle(self._rectangle.style.width) - oldWidth)) + 'px';
+           self._redrawImage();
        },
        mouseUpTopLeft = function(event) {
            self._mainDiv.removeEventListener('mousemove', mouseMoveTopLeft);
@@ -171,11 +204,13 @@ CutImage.prototype._subscribeOnMouseEvent = function() {
 
            self._rectangle.style.left = newLeft + 'px';
            self._rectangle.style.top = newTop + 'px';
+
+           self._redrawImage();
        },
        mouseUpRectangle = function(event) {
            self._mainDiv.removeEventListener('mousemove', mouseMoveRectangle);
            document.removeEventListener('mouseup', mouseUpRectangle);
-       }
+       },
        stop = function() {
           return false;
        };
@@ -237,6 +272,30 @@ CutImage.prototype._screenToOffset = function(elem, event) {
       x: event.pageX - elemScreenCoordinates.left,
       y: event.pageY - elemScreenCoordinates.top
    };
+};
+
+CutImage.prototype._redrawImage = function() {
+   var
+       rectangleLeft = this._rectangle.style.left,
+       rectangleTop = this._rectangle.style.top,
+       rectangleLeftOffset = this._parseStyle(rectangleLeft),
+       rectangleTopOffset = this._parseStyle(rectangleTop),
+       imageWidthOffset = this._parseStyle(this._mainDiv.style.width),
+       imageHeightOffset = this._parseStyle(this._mainDiv.style.height),
+       rectangleWidthOffset = this._parseStyle(this._rectangle.style.width),
+       rectangleHeightOffset = this._parseStyle(this._rectangle.style.height),
+       rectangleLeftPercent = (rectangleLeftOffset / rectangleWidthOffset) * 100,
+       rectangleTopPercent = (rectangleTopOffset / rectangleHeightOffset) * 100,
+       multipleWidth = imageWidthOffset / rectangleWidthOffset,
+       multipleHeight = imageHeightOffset / rectangleHeightOffset;
+
+   this._rectangle.style.backgroundPosition = "-" + rectangleLeft + " -" + rectangleTop;
+   for (var i = 0; i < this._preview.length; i++) {
+      this._preview[i].img.style.width = 100 * multipleWidth + '%';
+      this._preview[i].img.style.height = 100 * multipleHeight + '%';
+      this._preview[i].img.style.left = '-' + (rectangleLeftPercent)  + '%';
+      this._preview[i].img.style.top = '-' + (rectangleTopPercent)  + '%';
+   }
 };
 
 CutImage.prototype._parseStyle = function(styleString) {

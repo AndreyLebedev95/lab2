@@ -1,10 +1,85 @@
 <html>
 <head>
+    <link rel="stylesheet" href="main.css"/>
     <link rel="stylesheet" href="cutImage/cutImage.css"/>
     <script src="cutImage/index.js"></script>
     <script src="index.js"></script>
 </head>
 <body>
-<img src="https://www.google.ru/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png" alt="" id="img1"/>
+<div class="head">
+    <div class="head__title">
+        CutImage
+    </div>
+    <div class="head__description">
+        JavaScript библиотека для обрезки изображений
+    </div>
+</div>
+<div class="features">
+    <div class="feature">
+        <div class="feature__title">
+            Удобство
+        </div>
+        <div class="feature__description">
+            API модуля очень удобно для использования: много настраеваемых параметров, модуль базируется на ваших DOM элементах контроль над которыми остается за вами.
+        </div>
+    </div>
+    <div class="feature">
+        <div class="feature__title">
+            Нативность
+        </div>
+        <div class="feature__description">
+            Модуль использует только JavaScript и вам не нужно подключать никаких сторонних библиотек.
+        </div>
+    </div>
+    <div class="feature">
+        <div class="feature__title">
+            Быстродействие
+        </div>
+        <div class="feature__description">
+            Благодаря использованию 'чистого' JavaScript модуль не загружает CPU пользователей сайта и все довольны.
+        </div>
+    </div>
+</div>
+<div class="lessons">
+    <div class="lessons__title">
+        Примеры
+    </div>
+    <div class="lesson lesson1">
+        <div class="lesson__number">
+            Пример 1, прямоугольная область выделения 6:3.
+        </div>
+        <div class="lesson__code">
+            Код примера <br>
+            var img1Cut = new CutImage(img1, {
+            size: '6:3',
+            preview: [{
+            el: preview1,
+            isEllipse: false,
+            width: 200
+            }]
+            });
+        </div>
+        <img style="margin-bottom: 10px;" src="./img/400px-Warrenpoint_red_sky.jpg" alt="" id="img1"/>
+        <div id="preview1"></div>
+    </div>
+    <div class="lesson lesson2">
+        <div class="lesson__number">
+            Пример 2, овальная область выделения 4:3.
+        </div>
+        <div class="lesson__code">
+            Код примера <br>
+            var img2Cut = new CutImage(img2, {
+            size: '4:3',
+            preview: [{
+            el: preview2,
+            isEllipse: true,
+            width: 300
+            }]
+            });
+        </div>
+        <img style="margin-bottom: 10px;" src="./img/400px-Warrenpoint_red_sky.jpg" alt="" id="img2"/>
+        <div id="preview2"></div>
+    </div>
+</div>
 </body>
 </html>
